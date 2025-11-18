@@ -81,8 +81,8 @@ staging_autoscaling_desired_capacity = 1
 
 # The deployment bucket name needs to be unique and can only contain lower case
 # letters and dashes (no underscored allowed).
-deployment_bucket_name              = "vochm-deployment-8618945"
-public_storage_bucket_name          = "vochm-public-storage-8618945"
-private_storage_bucket_name         = "vochm-private-storage-8618945"
-public_storage_bucket_name_staging  = "vochm-public-storage-staging-8618945"
-private_storage_bucket_name_staging = "vochm-private-storage-staging-8618945"
+deployment_bucket_name              = "vochm-deployment-3760051"
+public_storage_bucket_name          = "vochm-public-storage-3760051"
+private_storage_bucket_name         = "vochm-private-storage-3760051"
+public_storage_bucket_name_staging  = "vochm-public-storage-staging-3760051"
+private_storage_bucket_name_staging = "vochm-private-storage-staging-3760051"

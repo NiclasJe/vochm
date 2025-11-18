@@ -1,6 +1,17 @@
 BEGIN;
 
 --
+-- Class Recipe as table recipes
+--
+CREATE TABLE "recipes" (
+    "id" bigserial PRIMARY KEY,
+    "author" text NOT NULL,
+    "text" text NOT NULL,
+    "date" timestamp without time zone NOT NULL,
+    "ingredients" text NOT NULL
+);
+
+--
 -- Class CloudStorageEntry as table serverpod_cloud_storage
 --
 CREATE TABLE "serverpod_cloud_storage" (
@@ -241,9 +252,9 @@ ALTER TABLE ONLY "serverpod_query_log"
 -- MIGRATION VERSION FOR vochm
 --
 INSERT INTO "serverpod_migrations" ("module", "version", "timestamp")
-    VALUES ('vochm', '20251115162218054', now())
+    VALUES ('vochm', '20251118195200621', now())
     ON CONFLICT ("module")
-    DO UPDATE SET "version" = '20251115162218054', "timestamp" = now();
+    DO UPDATE SET "version" = '20251118195200621', "timestamp" = now();
 
 --
 -- MIGRATION VERSION FOR serverpod

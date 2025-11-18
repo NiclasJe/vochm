@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: vochm
-      POSTGRES_PASSWORD: "LGpDeaR64s6267HquUT4ua5tDw1lpBQw"
+      POSTGRES_PASSWORD: "JObnR_2DrusL7bnC414U3T6Wa5MHuGR6"
     volumes:
       - vochm_data:/var/lib/postgresql/data
 
@@ -15,7 +15,7 @@ services:
     image: redis:6.2.6
     ports:
       - "8091:6379"
-    command: redis-server --requirepass "tVNquKlhZXw4tdMJVZo93aVccZht3c2h"
+    command: redis-server --requirepass "9osIHhkVPtyGuP82SVQIoeFwNiITupGc"
     environment:
       - REDIS_REPLICATION_MODE=master
 
@@ -27,7 +27,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: vochm_test
-      POSTGRES_PASSWORD: "WmnHl_TIosn5ph3i6ORCsmp0tuZlA5F0"
+      POSTGRES_PASSWORD: "BAbpEpnY38nNUjeTeBhMiN43EZCjZiBy"
     volumes:
       - vochm_test_data:/var/lib/postgresql/data
 
@@ -35,7 +35,7 @@ services:
     image: redis:6.2.6
     ports:
       - "9091:6379"
-    command: redis-server --requirepass "Kw2akBtorbNEjPhEzz4ONRk-9twWdCCp"
+    command: redis-server --requirepass "R2ejtUMompG5pqRkl3QVLihH5hrDYtj4"
     environment:
       - REDIS_REPLICATION_MODE=master
 

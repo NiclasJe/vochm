@@ -58,7 +58,7 @@ jobs:
         env:
           PROJECT_NAME: vochm
           AWS_NAME: vochm
-          DEPLOYMENT_BUCKET: vochm-deployment-8618945
+          DEPLOYMENT_BUCKET: vochm-deployment-3760051
           TARGET: ${{ github.event.inputs.target }}
         run: |
           # Deploy server to AWS

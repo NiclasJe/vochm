@@ -241,9 +241,9 @@ ALTER TABLE ONLY "serverpod_query_log"
 -- MIGRATION VERSION FOR vochm
 --
 INSERT INTO "serverpod_migrations" ("module", "version", "timestamp")
-    VALUES ('vochm', '20251115162218054', now())
+    VALUES ('vochm', '20251118165831172', now())
     ON CONFLICT ("module")
-    DO UPDATE SET "version" = '20251115162218054', "timestamp" = now();
+    DO UPDATE SET "version" = '20251118165831172', "timestamp" = now();
 
 --
 -- MIGRATION VERSION FOR serverpod
