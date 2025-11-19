@@ -28,7 +28,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./server/Dockerfile
+          file: ./vochm/vochm_server/Dockerfile
           push: true
           tags: ghcr.io/niclasje/vochm:latest
 
