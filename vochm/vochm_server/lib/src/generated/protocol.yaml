@@ -1,9 +1,9 @@
+animal:
+  - addAnimal:
+  - getAllAnimals:
 animalFinding:
   - insertAnimalFinding:
   - getAnimalFindings:
   - getDistanceBetweenFindings:
-recipe:
-  - generateRecipe:
-  - getRecipes:
 greeting:
   - hello:
