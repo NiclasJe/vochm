@@ -1,3 +1,7 @@
+animalFinding:
+  - insertAnimalFinding:
+  - getAnimalFindings:
+  - getDistanceBetweenFindings:
 recipe:
   - generateRecipe:
   - getRecipes:

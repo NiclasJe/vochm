@@ -1,0 +1,5 @@
+class: Animal
+table: animals
+fields:
+  id: int?
+  name: String

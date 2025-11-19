@@ -10,26 +10,105 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
-import '../endpoints/recipe_endpoint.dart' as _i2;
-import '../greeting_endpoint.dart' as _i3;
+import '../endpoints/animal_finding_endpoint.dart' as _i2;
+import '../endpoints/recipe_endpoint.dart' as _i3;
+import '../greeting_endpoint.dart' as _i4;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
   void initializeEndpoints(_i1.Server server) {
     var endpoints = <String, _i1.Endpoint>{
-      'recipe': _i2.RecipeEndpoint()
+      'animalFinding': _i2.AnimalFindingEndpoint()
+        ..initialize(
+          server,
+          'animalFinding',
+          null,
+        ),
+      'recipe': _i3.RecipeEndpoint()
         ..initialize(
           server,
           'recipe',
           null,
         ),
-      'greeting': _i3.GreetingEndpoint()
+      'greeting': _i4.GreetingEndpoint()
         ..initialize(
           server,
           'greeting',
           null,
         ),
     };
+    connectors['animalFinding'] = _i1.EndpointConnector(
+      name: 'animalFinding',
+      endpoint: endpoints['animalFinding']!,
+      methodConnectors: {
+        'insertAnimalFinding': _i1.MethodConnector(
+          name: 'insertAnimalFinding',
+          params: {
+            'latitude': _i1.ParameterDescription(
+              name: 'latitude',
+              type: _i1.getType<double>(),
+              nullable: false,
+            ),
+            'longitude': _i1.ParameterDescription(
+              name: 'longitude',
+              type: _i1.getType<double>(),
+              nullable: false,
+            ),
+            'animalId': _i1.ParameterDescription(
+              name: 'animalId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['animalFinding'] as _i2.AnimalFindingEndpoint)
+                  .insertAnimalFinding(
+            session,
+            params['latitude'],
+            params['longitude'],
+            params['animalId'],
+          ),
+        ),
+        'getAnimalFindings': _i1.MethodConnector(
+          name: 'getAnimalFindings',
+          params: {},
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['animalFinding'] as _i2.AnimalFindingEndpoint)
+                  .getAnimalFindings(session),
+        ),
+        'getDistanceBetweenFindings': _i1.MethodConnector(
+          name: 'getDistanceBetweenFindings',
+          params: {
+            'findingId1': _i1.ParameterDescription(
+              name: 'findingId1',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'findingId2': _i1.ParameterDescription(
+              name: 'findingId2',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['animalFinding'] as _i2.AnimalFindingEndpoint)
+                  .getDistanceBetweenFindings(
+            session,
+            params['findingId1'],
+            params['findingId2'],
+          ),
+        ),
+      },
+    );
     connectors['recipe'] = _i1.EndpointConnector(
       name: 'recipe',
       endpoint: endpoints['recipe']!,
@@ -47,7 +126,7 @@ class Endpoints extends _i1.EndpointDispatch {
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
-              (endpoints['recipe'] as _i2.RecipeEndpoint).generateRecipe(
+              (endpoints['recipe'] as _i3.RecipeEndpoint).generateRecipe(
             session,
             params['ingredients'],
           ),
@@ -59,7 +138,7 @@ class Endpoints extends _i1.EndpointDispatch {
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
-              (endpoints['recipe'] as _i2.RecipeEndpoint).getRecipes(session),
+              (endpoints['recipe'] as _i3.RecipeEndpoint).getRecipes(session),
         ),
       },
     );
@@ -80,7 +159,7 @@ class Endpoints extends _i1.EndpointDispatch {
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
-              (endpoints['greeting'] as _i3.GreetingEndpoint).hello(
+              (endpoints['greeting'] as _i4.GreetingEndpoint).hello(
             session,
             params['name'],
           ),

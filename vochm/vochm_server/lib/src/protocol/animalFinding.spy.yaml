@@ -1,0 +1,7 @@
+class: AnimalFinding
+table: animal_findings
+fields:
+  id: int?
+  animalId: int
+  latitude: double
+  longitude: double
