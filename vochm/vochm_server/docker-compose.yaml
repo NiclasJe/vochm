@@ -1,44 +1,35 @@
 services:
-  # Development services
   postgres:
-    image: pgvector/pgvector:pg16
-    ports:
-      - "8090:5432"
+    image: postgis/postgis:17-3.4
     environment:
       POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1122
       POSTGRES_DB: vochm
-      POSTGRES_PASSWORD: "JObnR_2DrusL7bnC414U3T6Wa5MHuGR6"
+    ports:
+      - "5432:5432"
     volumes:
-      - vochm_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  redis:
-    image: redis:6.2.6
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "8091:6379"
-    command: redis-server --requirepass "9osIHhkVPtyGuP82SVQIoeFwNiITupGc"
+      - "8080:8080"
     environment:
-      - REDIS_REPLICATION_MODE=master
-
-  # Test services
-  postgres_test:
-    image: pgvector/pgvector:pg16
-    ports:
-      - "9090:5432"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_DB: vochm_test
-      POSTGRES_PASSWORD: "BAbpEpnY38nNUjeTeBhMiN43EZCjZiBy"
-    volumes:
-      - vochm_test_data:/var/lib/postgresql/data
-
-  redis_test:
-    image: redis:6.2.6
-    ports:
-      - "9091:6379"
-    command: redis-server --requirepass "R2ejtUMompG5pqRkl3QVLihH5hrDYtj4"
-    environment:
-      - REDIS_REPLICATION_MODE=master
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: vochm
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: 1122
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
-  vochm_data:
-  vochm_test_data:
+  postgres_data:
