@@ -27,7 +27,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./vochm/vochm_server
           file: ./vochm/vochm_server/Dockerfile
           push: true
           tags: ghcr.io/niclasje/vochm:latest
