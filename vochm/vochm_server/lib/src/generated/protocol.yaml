@@ -1,9 +1,10 @@
 animal:
   - addAnimal:
   - getAllAnimals:
+  - getAnimalById:
 animalFinding:
   - insertAnimalFinding:
   - getAnimalFindings:
-  - getDistanceBetweenFindings:
+  - getNearestNeighborsForAnimal:
 greeting:
   - hello:

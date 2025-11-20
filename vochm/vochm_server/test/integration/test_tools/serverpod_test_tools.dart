@@ -197,6 +197,35 @@ class _AnimalEndpoint {
       }
     });
   }
+
+  _i3.Future<_i4.Animal?> getAnimalById(
+    _i1.TestSessionBuilder sessionBuilder,
+    int animalId,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+        endpoint: 'animal',
+        method: 'getAnimalById',
+      );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'animal',
+          methodName: 'getAnimalById',
+          parameters: _i1.testObjectToJson({'animalId': animalId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i3.Future<_i4.Animal?>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
 }
 
 class _AnimalFindingEndpoint {
@@ -271,26 +300,22 @@ class _AnimalFindingEndpoint {
     });
   }
 
-  _i3.Future<double> getDistanceBetweenFindings(
+  _i3.Future<double> getNearestNeighborsForAnimal(
     _i1.TestSessionBuilder sessionBuilder,
-    int findingId1,
-    int findingId2,
+    int animalId,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
           (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
         endpoint: 'animalFinding',
-        method: 'getDistanceBetweenFindings',
+        method: 'getNearestNeighborsForAnimal',
       );
       try {
         var _localCallContext = await _endpointDispatch.getMethodCallContext(
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'animalFinding',
-          methodName: 'getDistanceBetweenFindings',
-          parameters: _i1.testObjectToJson({
-            'findingId1': findingId1,
-            'findingId2': findingId2,
-          }),
+          methodName: 'getNearestNeighborsForAnimal',
+          parameters: _i1.testObjectToJson({'animalId': animalId}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue = await (_localCallContext.method.call(

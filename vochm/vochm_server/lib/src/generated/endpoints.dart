@@ -69,6 +69,24 @@ class Endpoints extends _i1.EndpointDispatch {
               (endpoints['animal'] as _i2.AnimalEndpoint)
                   .getAllAnimals(session),
         ),
+        'getAnimalById': _i1.MethodConnector(
+          name: 'getAnimalById',
+          params: {
+            'animalId': _i1.ParameterDescription(
+              name: 'animalId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            )
+          },
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['animal'] as _i2.AnimalEndpoint).getAnimalById(
+            session,
+            params['animalId'],
+          ),
+        ),
       },
     );
     connectors['animalFinding'] = _i1.EndpointConnector(
@@ -116,29 +134,23 @@ class Endpoints extends _i1.EndpointDispatch {
               (endpoints['animalFinding'] as _i3.AnimalFindingEndpoint)
                   .getAnimalFindings(session),
         ),
-        'getDistanceBetweenFindings': _i1.MethodConnector(
-          name: 'getDistanceBetweenFindings',
+        'getNearestNeighborsForAnimal': _i1.MethodConnector(
+          name: 'getNearestNeighborsForAnimal',
           params: {
-            'findingId1': _i1.ParameterDescription(
-              name: 'findingId1',
+            'animalId': _i1.ParameterDescription(
+              name: 'animalId',
               type: _i1.getType<int>(),
               nullable: false,
-            ),
-            'findingId2': _i1.ParameterDescription(
-              name: 'findingId2',
-              type: _i1.getType<int>(),
-              nullable: false,
-            ),
+            )
           },
           call: (
             _i1.Session session,
             Map<String, dynamic> params,
           ) async =>
               (endpoints['animalFinding'] as _i3.AnimalFindingEndpoint)
-                  .getDistanceBetweenFindings(
+                  .getNearestNeighborsForAnimal(
             session,
-            params['findingId1'],
-            params['findingId2'],
+            params['animalId'],
           ),
         ),
       },

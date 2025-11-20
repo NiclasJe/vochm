@@ -23,4 +23,11 @@ class AnimalEndpoint extends Endpoint {
   Future<List<Animal>> getAllAnimals(Session session) async {
     return await Animal.db.find(session);
   }
+
+  Future<Animal?> getAnimalById(Session session, int animalId) async {
+    return await Animal.db.findFirstRow(
+      session,
+      where: (t) => t.id.equals(animalId),
+    );
+  }
 }

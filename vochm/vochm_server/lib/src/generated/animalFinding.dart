@@ -16,23 +16,23 @@ abstract class AnimalFinding
   AnimalFinding._({
     this.id,
     required this.animalId,
-    required this.latitude,
-    required this.longitude,
+    this.latitude,
+    this.longitude,
   });
 
   factory AnimalFinding({
     int? id,
     required int animalId,
-    required double latitude,
-    required double longitude,
+    double? latitude,
+    double? longitude,
   }) = _AnimalFindingImpl;
 
   factory AnimalFinding.fromJson(Map<String, dynamic> jsonSerialization) {
     return AnimalFinding(
       id: jsonSerialization['id'] as int?,
       animalId: jsonSerialization['animalId'] as int,
-      latitude: (jsonSerialization['latitude'] as num).toDouble(),
-      longitude: (jsonSerialization['longitude'] as num).toDouble(),
+      latitude: (jsonSerialization['latitude'] as num?)?.toDouble(),
+      longitude: (jsonSerialization['longitude'] as num?)?.toDouble(),
     );
   }
 
@@ -45,9 +45,9 @@ abstract class AnimalFinding
 
   int animalId;
 
-  double latitude;
+  double? latitude;
 
-  double longitude;
+  double? longitude;
 
   @override
   _i1.Table<int?> get table => t;
@@ -66,8 +66,8 @@ abstract class AnimalFinding
     return {
       if (id != null) 'id': id,
       'animalId': animalId,
-      'latitude': latitude,
-      'longitude': longitude,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
     };
   }
 
@@ -76,8 +76,8 @@ abstract class AnimalFinding
     return {
       if (id != null) 'id': id,
       'animalId': animalId,
-      'latitude': latitude,
-      'longitude': longitude,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
     };
   }
 
@@ -117,8 +117,8 @@ class _AnimalFindingImpl extends AnimalFinding {
   _AnimalFindingImpl({
     int? id,
     required int animalId,
-    required double latitude,
-    required double longitude,
+    double? latitude,
+    double? longitude,
   }) : super._(
           id: id,
           animalId: animalId,
@@ -133,14 +133,14 @@ class _AnimalFindingImpl extends AnimalFinding {
   AnimalFinding copyWith({
     Object? id = _Undefined,
     int? animalId,
-    double? latitude,
-    double? longitude,
+    Object? latitude = _Undefined,
+    Object? longitude = _Undefined,
   }) {
     return AnimalFinding(
       id: id is int? ? id : this.id,
       animalId: animalId ?? this.animalId,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
+      latitude: latitude is double? ? latitude : this.latitude,
+      longitude: longitude is double? ? longitude : this.longitude,
     );
   }
 }
