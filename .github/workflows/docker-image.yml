@@ -68,9 +68,10 @@ jobs:
           DATABASE_USER: postgres
           DATABASE_PASSWORD: postgres
         run: |
-          dart bin/main.dart --apply-migrations &
-          sleep 10
-      
+          echo "Starting serverpod..."
+          nohup dart bin/main.dart --apply-migrations --address 0.0.0.0 > server.log 2>&1 &
+          sleep 20
+          tail -n +1 server.log
 
       # Förbered Flutter-appen
       - name: Install Flutter dependencies
@@ -81,31 +82,64 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
 
-      - name: Create AVD and run tests
+      - name: Start emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 33
           arch: x86_64
           profile: pixel_6
-          script: |
-            cd vochm_flutter
-            flutter test integration_test --verbose
+          force-avd-creation: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim -wipe-data -no-snapshot -accel off
+          emulator-boot-timeout: 1200
 
-      # Kör integrationstester på Android
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
+      - name: Wait for emulator and run integration tests
+        shell: bash
+        run: |
+          set -xeuo pipefail
 
-      - name: Create AVD and run tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 33
-          arch: x86_64
-          profile: pixel_6
-          script: |
-            cd vochm_flutter
-            flutter test integration_test --verbose
+          cd ./vochm/vochm_flutter
 
+          # starta adb säkert
+          adb kill-server || true
+          adb start-server || true
 
+          # vänta tills emulatorn syns som "device"
+          for i in $(seq 1 180); do
+            if adb devices | grep -E "^emulator-5554\s+device$" >/dev/null; then
+              echo "Emulator connected"
+              break
+            fi
+            echo "Waiting for emulator device (attempt $i)..."
+            adb devices
+            sleep 2
+          done
+
+          # vänta tills boot är färdig, hantera "offline" genom att starta om adb vid behov
+          for i in $(seq 1 180); do
+            state=$(adb -s emulator-5554 get-state 2>/dev/null || true)
+            echo "Device state is '$state' (attempt $i)"
+            if [ "$state" = "device" ]; then
+              boot=$(adb -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
+              echo "sys.boot_completed=$boot"
+              if [ "$boot" = "1" ]; then
+                echo "Emulator boot completed"
+                break
+              fi
+            elif [ "$state" = "offline" ]; then
+              echo "Device is offline — restarting adb..."
+              adb kill-server || true
+              adb start-server || true
+            else
+              echo "Calling wait-for-device fallback..."
+              adb -s emulator-5554 wait-for-device || true
+            fi
+            sleep 2
+          done
+
+          adb devices
+
+          # Kör integrationstester
+          flutter test integration_test --verbose
   test:
     name: Run Flutter Unit Tests
     runs-on: ubuntu-latest
