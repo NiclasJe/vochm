@@ -18,6 +18,7 @@ jobs:
       postgres:
         image: postgres:17
         env:
+          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: vochm_test
         ports:
@@ -39,6 +40,10 @@ jobs:
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
 
+      - name: Activate Serverpod CLI
+        working-directory: ./vochm/vochm_server
+        run: dart pub global activate serverpod_cli
+
       # Starta Serverpod-servern
       - name: Install server dependencies
         working-directory: ./vochm/vochm_server
@@ -52,15 +57,24 @@ jobs:
           DATABASE_NAME: vochm_test
           DATABASE_USER: postgres
           DATABASE_PASSWORD: postgres
-        run: dart run serverpod create-migration && dart run serverpod migrate
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 && break
+            sleep 1
+          done
+          dart pub global run serverpod migrate
 
       - name: Start Serverpod server
         working-directory: ./vochm/vochm_server
         env:
           DATABASE_HOST: localhost
           DATABASE_PORT: 5432
+          DATABASE_NAME: vochm_test
+          DATABASE_USER: postgres
+          DATABASE_PASSWORD: postgres
         run: |
-          dart run bin/main.dart &
+          dart pub global activate serverpod_cli || true
+          nohup dart run bin/main.dart > server.log 2>&1 &
           sleep 10
 
       # Förbered Flutter-appen
