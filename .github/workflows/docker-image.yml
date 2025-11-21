@@ -41,11 +41,11 @@ jobs:
 
       # Starta Serverpod-servern
       - name: Install server dependencies
-        working-directory: vochm_server
+        working-directory: ./vochm/vochm_server
         run: dart pub get
 
       - name: Run database migrations
-        working-directory: vochm_server
+        working-directory: ./vochm/vochm_server
         env:
           DATABASE_HOST: localhost
           DATABASE_PORT: 5432
@@ -55,7 +55,7 @@ jobs:
         run: dart run serverpod create-migration && dart run serverpod migrate
 
       - name: Start Serverpod server
-        working-directory: vochm_server
+        working-directory: ./vochm/vochm_server
         env:
           DATABASE_HOST: localhost
           DATABASE_PORT: 5432
@@ -65,7 +65,7 @@ jobs:
 
       # Förbered Flutter-appen
       - name: Install Flutter dependencies
-        working-directory: vochm_flutter
+        working-directory: ./vochm/vochm_flutter
         run: flutter pub get
 
       # Kör integrationstester på Android
@@ -79,7 +79,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           script: |
-            cd vochm_flutter
+            cd ./vochm/vochm_flutter
             flutter test integration_test --verbose
 
   test:
