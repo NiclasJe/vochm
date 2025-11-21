@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../service_locator.dart';
 import '../controllers/animal_map_controller.dart';
 import 'animal_map_view.dart';
 import 'animal_list_view.dart';
 import 'animal_registration_dialog.dart';
 
 class AnimalMapPage extends StatefulWidget {
-  const AnimalMapPage({super.key, required this.controller});
-
-  final AnimalMapController controller;
+  const AnimalMapPage({super.key});
 
   @override
   State<AnimalMapPage> createState() => _AnimalMapPageState();
@@ -17,12 +16,13 @@ class AnimalMapPage extends StatefulWidget {
 
 class _AnimalMapPageState extends State<AnimalMapPage>
     with SingleTickerProviderStateMixin {
-  AnimalMapController get _controller => widget.controller;
+  late final AnimalMapController _controller;
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _controller = getIt<AnimalMapController>();
     _tabController = TabController(length: 2, vsync: this);
     _controller.init();
   }
@@ -36,7 +36,7 @@ class _AnimalMapPageState extends State<AnimalMapPage>
   Future<void> _showAddAnimalDialog() async {
     await showDialog(
       context: context,
-      builder: (context) => AnimalRegistrationDialog(controller: _controller),
+      builder: (context) => const AnimalRegistrationDialog(),
     );
   }
 
@@ -60,9 +60,9 @@ class _AnimalMapPageState extends State<AnimalMapPage>
             children: [
               TabBarView(
                 controller: _tabController,
-                children: [
-                  AnimalMapView(controller: _controller),
-                  AnimalListView(controller: _controller),
+                children: const [
+                  AnimalMapView(),
+                  AnimalListView(),
                 ],
               ),
               if (state.errorMessage != null)
@@ -85,6 +85,7 @@ class _AnimalMapPageState extends State<AnimalMapPage>
             ],
           ),
           floatingActionButton: FloatingActionButton(
+            key: const Key('addAnimalButton'),
             onPressed: _showAddAnimalDialog,
             child: const Icon(Icons.add),
           ),

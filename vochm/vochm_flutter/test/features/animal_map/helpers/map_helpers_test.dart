@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:vochm_client/vochm_client.dart' as api;
 import 'package:vochm_flutter/features/animal_map/helpers/map_helpers.dart';
 
@@ -112,4 +111,3 @@ void main() {
     });
   });
 }
-

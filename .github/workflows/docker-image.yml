@@ -11,6 +11,77 @@ on:
 
 jobs:
 
+  integration_test_android:
+    runs-on: macos-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vochm_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+
+      # Starta Serverpod-servern
+      - name: Install server dependencies
+        working-directory: vochm_server
+        run: dart pub get
+
+      - name: Run database migrations
+        working-directory: vochm_server
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_NAME: vochm_test
+          DATABASE_USER: postgres
+          DATABASE_PASSWORD: postgres
+        run: dart run serverpod create-migration && dart run serverpod migrate
+
+      - name: Start Serverpod server
+        working-directory: vochm_server
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+        run: |
+          dart run bin/main.dart &
+          sleep 10
+
+      # Förbered Flutter-appen
+      - name: Install Flutter dependencies
+        working-directory: vochm_flutter
+        run: flutter pub get
+
+      # Kör integrationstester på Android
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: Create AVD and run tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            cd vochm_flutter
+            flutter test integration_test --verbose
+
   test:
     name: Run Flutter Unit Tests
     runs-on: ubuntu-latest

@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../service_locator.dart';
 import '../controllers/animal_map_controller.dart';
 
-class AnimalListView extends StatelessWidget {
-  const AnimalListView({
-    super.key,
-    required this.controller,
-  });
+class AnimalListView extends StatefulWidget {
+  const AnimalListView({super.key});
 
-  final AnimalMapController controller;
+  @override
+  State<AnimalListView> createState() => _AnimalListViewState();
+}
+
+class _AnimalListViewState extends State<AnimalListView> {
+  late final AnimalMapController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = getIt<AnimalMapController>();
+  }
 
   @override
   Widget build(BuildContext context) {

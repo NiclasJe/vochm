@@ -9,10 +9,12 @@ const defaultZoom = 5.0;
 List<Marker> markersFromFindings(
   List<api.AnimalFinding> findings, {
   void Function(api.AnimalFinding)? onTap,
+  Key Function(api.AnimalFinding)? keyBuilder,
 }) {
   return findings
       .map(
         (f) => Marker(
+          key: keyBuilder != null ? keyBuilder(f) : null,
           point: LatLng(f.latitude!, f.longitude!),
           width: 40,
           height: 40,

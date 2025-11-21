@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:vochm_client/vochm_client.dart' as api;
 
-import '../controllers/animal_map_controller.dart';
+import '../../../service_locator.dart';
+import '../services/animal_service.dart';
 
 class FindingInfoSheet extends StatefulWidget {
   const FindingInfoSheet({
     super.key,
     required this.finding,
-    required this.controller,
   });
 
   final api.AnimalFinding finding;
-  final AnimalMapController controller;
 
   @override
   State<FindingInfoSheet> createState() => _FindingInfoSheetState();
@@ -21,17 +20,18 @@ class _FindingInfoSheetState extends State<FindingInfoSheet> {
   api.Animal? _animal;
   bool _isLoading = true;
   String? _error;
+  late final AnimalService animalService;
 
   @override
   void initState() {
     super.initState();
+    animalService = getIt<AnimalService>();
     _loadAnimal();
   }
 
   Future<void> _loadAnimal() async {
     try {
-      final animal = await widget.controller.animalService
-          .getAnimalById(widget.finding.animalId);
+      final animal = await animalService.getAnimalById(widget.finding.animalId);
       if (mounted) {
         setState(() {
           _animal = animal;
@@ -120,4 +120,3 @@ class _FindingInfoSheetState extends State<FindingInfoSheet> {
     );
   }
 }
-
