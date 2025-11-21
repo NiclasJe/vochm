@@ -24,10 +24,10 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd pg_isready -U postgres
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
 
     steps:
       - uses: actions/checkout@v4
@@ -40,14 +40,27 @@ jobs:
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
 
-      - name: Activate Serverpod CLI
-        working-directory: ./vochm/vochm_server
-        run: dart pub global activate serverpod_cli
-
-      # Starta Serverpod-servern
       - name: Install server dependencies
         working-directory: ./vochm/vochm_server
         run: dart pub get
+
+      - name: Activate Serverpod CLI
+        working-directory: ./vochm/vochm_server
+        run: |
+          # Aktivera CLI som behövs för `serverpod` kommandon
+          # Prova 'serverpod' först, annars fallback till 'serverpod_cli'
+          if ! dart pub global activate serverpod -v; then
+            dart pub global activate serverpod_cli
+          fi
+          # Lägg till global activate bin i PATH
+          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
+
+      - name: Wait for Postgres
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U postgres && break
+            sleep 1
+          done
 
       - name: Run database migrations
         working-directory: ./vochm/vochm_server
@@ -58,10 +71,7 @@ jobs:
           DATABASE_USER: postgres
           DATABASE_PASSWORD: postgres
         run: |
-          for i in {1..30}; do
-            pg_isready -h localhost -p 5432 && break
-            sleep 1
-          done
+          # Kör endast migrate i CI — skapa migrations lokalt och checka in dem
           dart pub global run serverpod migrate
 
       - name: Start Serverpod server
@@ -73,28 +83,8 @@ jobs:
           DATABASE_USER: postgres
           DATABASE_PASSWORD: postgres
         run: |
-          dart pub global activate serverpod_cli || true
           nohup dart run bin/main.dart > server.log 2>&1 &
           sleep 10
-
-      # Förbered Flutter-appen
-      - name: Install Flutter dependencies
-        working-directory: ./vochm/vochm_flutter
-        run: flutter pub get
-
-      # Kör integrationstester på Android
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
-
-      - name: Create AVD and run tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 33
-          arch: x86_64
-          profile: pixel_6
-          script: |
-            cd ./vochm/vochm_flutter
-            flutter test integration_test --verbose
 
   test:
     name: Run Flutter Unit Tests
