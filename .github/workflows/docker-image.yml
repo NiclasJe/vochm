@@ -10,6 +10,29 @@ on:
       - main
 
 jobs:
+
+  test:
+    name: Run Flutter Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Load Flutter dependencies
+        working-directory: ./vochm/vochm_flutter
+        run: flutter pub get
+
+      - name: Run tests
+        working-directory: ./vochm/vochm_flutter
+        run: flutter test --no-pub
+
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest

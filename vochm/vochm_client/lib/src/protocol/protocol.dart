@@ -13,13 +13,11 @@ import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'greeting.dart' as _i2;
 import 'animal.dart' as _i3;
 import 'animalFinding.dart' as _i4;
-import 'receipe.dart' as _i5;
+import 'package:vochm_client/src/protocol/animal.dart' as _i5;
 import 'package:vochm_client/src/protocol/animalFinding.dart' as _i6;
-import 'package:vochm_client/src/protocol/receipe.dart' as _i7;
 export 'greeting.dart';
 export 'animal.dart';
 export 'animalFinding.dart';
-export 'receipe.dart';
 export 'client.dart';
 
 class Protocol extends _i1.SerializationManager {
@@ -44,9 +42,6 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i4.AnimalFinding) {
       return _i4.AnimalFinding.fromJson(data) as T;
     }
-    if (t == _i5.Recipe) {
-      return _i5.Recipe.fromJson(data) as T;
-    }
     if (t == _i1.getType<_i2.Greeting?>()) {
       return (data != null ? _i2.Greeting.fromJson(data) : null) as T;
     }
@@ -56,17 +51,14 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i1.getType<_i4.AnimalFinding?>()) {
       return (data != null ? _i4.AnimalFinding.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i5.Recipe?>()) {
-      return (data != null ? _i5.Recipe.fromJson(data) : null) as T;
+    if (t == List<_i5.Animal>) {
+      return (data as List).map((e) => deserialize<_i5.Animal>(e)).toList()
+          as T;
     }
     if (t == List<_i6.AnimalFinding>) {
       return (data as List)
           .map((e) => deserialize<_i6.AnimalFinding>(e))
           .toList() as T;
-    }
-    if (t == List<_i7.Recipe>) {
-      return (data as List).map((e) => deserialize<_i7.Recipe>(e)).toList()
-          as T;
     }
     return super.deserialize<T>(data, t);
   }
@@ -83,9 +75,6 @@ class Protocol extends _i1.SerializationManager {
     }
     if (data is _i4.AnimalFinding) {
       return 'AnimalFinding';
-    }
-    if (data is _i5.Recipe) {
-      return 'Recipe';
     }
     return null;
   }
@@ -104,9 +93,6 @@ class Protocol extends _i1.SerializationManager {
     }
     if (dataClassName == 'AnimalFinding') {
       return deserialize<_i4.AnimalFinding>(data['data']);
-    }
-    if (dataClassName == 'Recipe') {
-      return deserialize<_i5.Recipe>(data['data']);
     }
     return super.deserializeByClassName(data);
   }
