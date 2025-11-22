@@ -26,7 +26,7 @@ echo "Waiting for emulator to be ONLINE and for Android boot to complete..."
 for i in $(seq 1 600); do
   STATE=$(adb -s "$EMULATOR_SERIAL" get-state 2>/dev/null || echo "unknown")
   if [ "$STATE" = "device" ]; then
-    BOOT_COMPLETED=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed 2>/dev/null || echo "")
+    BOOT_COMPLETED=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r\n' || echo "")
     if [ "$BOOT_COMPLETED" = "1" ]; then
       echo "Emulator boot completed and device is online."
       break
@@ -38,7 +38,7 @@ for i in $(seq 1 600); do
 done
 
 # Final check
-BOOT_COMPLETED=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed || echo "")
+BOOT_COMPLETED=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed | tr -d '\r\n' || echo "")
 if [ "$BOOT_COMPLETED" != "1" ]; then
   echo "ERROR: Emulator did not finish booting in time. sys.boot_completed='$BOOT_COMPLETED'"
   adb -s "$EMULATOR_SERIAL" shell getprop | sed -n '1,200p' || true
@@ -52,7 +52,10 @@ sleep 2
 
 # Run tests from the Flutter app folder
 echo "Running integration tests..."
-cd vochm/vochm_flutter
+cd vochm/vochm_flutter || {
+  echo "ERROR: Failed to change to vochm/vochm_flutter directory"
+  exit 1
+}
 
 # Ensure packages are fetched (safety)
 flutter pub get
