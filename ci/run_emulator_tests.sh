@@ -46,7 +46,12 @@ done
 adb devices
 
 # Run integration tests
-flutter test integration_test --verbose || true
+# Note: The test result will determine the CI job status
+flutter test integration_test --verbose
+test_result=$?
 
 # try to kill emulator (ignore errors)
 adb -s emulator-5554 emu kill || true
+
+# Exit with the test result to properly reflect pass/fail
+exit $test_result
