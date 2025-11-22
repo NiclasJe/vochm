@@ -143,18 +143,6 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
 
-      - name: Install Android system image
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "Installing Android SDK system image for API 33"
-          if yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager \
-            "system-images;android-33;google_apis;x86_64"; then
-            echo "System image installation complete"
-          else
-            echo "Warning: sdkmanager returned non-zero exit code, but continuing..."
-          fi
-
       - name: Create AVD and run tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
