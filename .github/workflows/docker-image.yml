@@ -14,21 +14,6 @@ jobs:
   integration_test_android:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: vochm_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
     steps:
       - uses: actions/checkout@v4
 
@@ -37,52 +22,53 @@ jobs:
           flutter-version: '3.24.0'
           channel: 'stable'
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      - name: Install server dependencies
-        working-directory: ./vochm/vochm_server
-        run: dart pub get
-
-      - name: Activate Serverpod CLI
+      - name: Start database and server with docker-compose
         working-directory: ./vochm/vochm_server
         run: |
-          # Activate the Serverpod CLI package
-          dart pub global activate serverpod_cli
-          # Expose global binaries in PATH for subsequent steps
-          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
-          # Verify the CLI is available
-          serverpod --version || (echo "serverpod CLI not found on PATH" && exit 1)
-
-      - name: Wait for Postgres
-        run: |
+          echo "Starting services with docker-compose..."
+          docker compose up -d --build
+          
+          echo "Waiting for services to be healthy..."
+          # Wait for postgres to be healthy
           for i in {1..60}; do
-            pg_isready -h localhost -p 5432 -U postgres && break
+            if docker compose exec -T postgres pg_isready -U postgres > /dev/null 2>&1; then
+              echo "Postgres is ready"
+              break
+            fi
+            echo "Waiting for Postgres... ($i/60)"
             sleep 2
           done
+          
+          # Wait for server to be ready (check logs for successful start)
+          echo "Waiting for server to start..."
+          sleep 10
+          
+          echo "=== Docker Compose Services Status ==="
+          docker compose ps
+          
+          echo "=== Server Logs ==="
+          docker compose logs server
+          
+          echo "=== Postgres Logs ==="
+          docker compose logs postgres
 
-      - name: Start Serverpod server
-        working-directory: ./vochm/vochm_server
-        env:
-          DATABASE_HOST: localhost
-          DATABASE_PORT: 5432
-          DATABASE_NAME: vochm_test
-          DATABASE_USER: postgres
-          DATABASE_PASSWORD: postgres
+      - name: Verify server is responding
         run: |
-          echo "Starting serverpod..."
-          # Ensure env variables are exported for the background process
-          export DATABASE_HOST="${DATABASE_HOST}"
-          export DATABASE_PORT="${DATABASE_PORT}"
-          export DATABASE_NAME="${DATABASE_NAME}"
-          export DATABASE_USER="${DATABASE_USER}"
-          export DATABASE_PASSWORD="${DATABASE_PASSWORD}"
-
-          # Start server via serverpod CLI so flags like --apply-migrations and --address are recognized
-          nohup serverpod run --apply-migrations --address 0.0.0.0 > server.log 2>&1 &
-          # Give server time to boot and apply migrations
-          sleep 30
-          tail -n +1 server.log
+          echo "Testing server connectivity..."
+          for i in {1..30}; do
+            if curl -f http://localhost:8080/ > /dev/null 2>&1; then
+              echo "Server is responding on port 8080"
+              break
+            fi
+            echo "Waiting for server to respond... ($i/30)"
+            sleep 2
+          done
+          
+          # Test endpoint connectivity
+          curl -v http://localhost:8080/ || echo "Server not responding yet, but continuing..."
 
       # Prepare Flutter app
       - name: Install Flutter dependencies
@@ -164,7 +150,8 @@ jobs:
                 echo "Running test file: $TEST_FILE (attempt $attempt/$ATTEMPTS)"
                 adb -s "$EMULATOR_SERIAL" forward --remove-all || true
                 # Run flutter test with a timeout (180s) to avoid infinite hangs
-                if timeout 180 flutter test "$TEST_FILE" --verbose; then
+                # Android emulator reaches host at 10.0.2.2
+                if timeout 180 flutter test "$TEST_FILE" --verbose --dart-define=SERVER_URL=http://10.0.2.2:8080; then
                   echo "Test $TEST_FILE passed"
                   TEST_PASSED=1
                   break
@@ -196,6 +183,44 @@ jobs:
             fi
 
             echo "All integration test files passed"
+
+      - name: Upload integration test artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-diagnostics
+          path: |
+            ci-*.txt
+            vochm/vochm_flutter/integration_test/*.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Collect docker-compose logs
+        if: always()
+        working-directory: ./vochm/vochm_server
+        run: |
+          echo "Collecting final logs..."
+          docker compose logs server > ../../server-final.log 2>&1 || true
+          docker compose logs postgres > ../../postgres-final.log 2>&1 || true
+
+      - name: Upload docker-compose logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-compose-logs
+          path: |
+            server-final.log
+            postgres-final.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Cleanup docker-compose services
+        if: always()
+        working-directory: ./vochm/vochm_server
+        run: |
+          echo "Stopping docker-compose services..."
+          docker compose down -v
+
   test:
     name: Run Flutter Unit Tests
     runs-on: ubuntu-latest
@@ -249,7 +274,7 @@ jobs:
   deploy:
     name: Deploy to VM
     runs-on: ubuntu-latest
-    needs: [test, build]
+    needs: [test, build, integration_test_android]
 
     steps:
       - name: SSH deploy
