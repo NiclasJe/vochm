@@ -102,7 +102,96 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim -wipe-data -no-snapshot
           emulator-boot-timeout: 1800
-          script: ./ci/run_emulator_tests.sh
+          script: |
+            set -euo pipefail
+            set -x
+
+            # Wait for emulator to fully boot
+            echo "Waiting for device..."
+            adb wait-for-device
+
+            boot_completed=""
+            for i in $(seq 1 60); do
+              boot_completed=$(adb -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || echo "")
+              echo "sys.boot_completed=$boot_completed (attempt $i)"
+              if [[ "$boot_completed" == "1" ]]; then
+                echo "Emulator booted"
+                break
+              fi
+              sleep 5
+            done
+
+            if [[ "$boot_completed" != "1" ]]; then
+              echo "Emulator did not finish booting after 5 minutes. Dumping diagnostics..." >&2
+              adb -s emulator-5554 logcat -d > ci-emulator-logcat.txt || true
+              adb -s emulator-5554 shell dumpsys activity > ci-dumpsys-activity.txt || true
+              adb -s emulator-5554 shell ps -A > ci-ps.txt || true
+              adb forward --list > ci-adb-forward-list.txt || true
+              echo "Failing the job because emulator did not boot." >&2
+              exit 1
+            fi
+
+            # Prepare device for tests (adb cleanup + forward remove)
+            echo "Cleaning adb forwards and ensuring device is present"
+            adb -s emulator-5554 forward --remove-all || true
+            adb -s emulator-5554 wait-for-device
+
+            # Unlock and settle
+            adb -s emulator-5554 shell input keyevent 82 || true
+            sleep 5
+
+            # Change to flutter app folder and ensure dependencies
+            cd vochm/vochm_flutter
+            flutter pub get
+
+            # Run integration tests with retry
+            FAILED=0
+            TEST_DIR="integration_test"
+            if [ ! -d "$TEST_DIR" ]; then
+              echo "No integration_test directory found"
+              exit 1
+            fi
+
+            for TEST_FILE in $TEST_DIR/*.dart; do
+              echo "=== Testing $TEST_FILE ==="
+              ATTEMPTS=3
+              TEST_PASSED=0
+              for attempt in $(seq 1 $ATTEMPTS); do
+                echo "Running test file: $TEST_FILE (attempt $attempt/$ATTEMPTS)"
+                adb -s emulator-5554 forward --remove-all || true
+                # Run flutter test with a timeout (180s) to avoid infinite hangs
+                if timeout 180 flutter test "$TEST_FILE" --verbose; then
+                  echo "Test $TEST_FILE passed"
+                  TEST_PASSED=1
+                  break
+                else
+                  echo "Test $TEST_FILE failed on attempt $attempt"
+                  if [[ $attempt -lt $ATTEMPTS ]]; then
+                    echo "Collecting logs and retrying..."
+                    adb -s emulator-5554 logcat -d > ../../ci-emulator-logcat-$(basename $TEST_FILE)-$attempt.txt || true
+                    sleep 5
+                    adb -s emulator-5554 shell am force-stop com.example.vochm_flutter || true
+                  else
+                    echo "All attempts failed for $TEST_FILE. Collecting final diagnostics..."
+                    adb -s emulator-5554 logcat -d > ../../ci-emulator-logcat-$(basename $TEST_FILE)-final.txt || true
+                    adb -s emulator-5554 shell dumpsys activity > ../../ci-dumpsys-activity-$(basename $TEST_FILE)-final.txt || true
+                    adb -s emulator-5554 shell ps -A > ../../ci-ps-$(basename $TEST_FILE)-final.txt || true
+                    adb forward --list > ../../ci-adb-forward-list-$(basename $TEST_FILE)-final.txt || true
+                  fi
+                fi
+              done
+              
+              if [[ $TEST_PASSED -eq 0 ]]; then
+                FAILED=1
+              fi
+            done
+
+            if [[ $FAILED -ne 0 ]]; then
+              echo "One or more integration test files failed."
+              exit 1
+            fi
+
+            echo "All integration test files passed"
   test:
     name: Run Flutter Unit Tests
     runs-on: ubuntu-latest
