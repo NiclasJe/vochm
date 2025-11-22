@@ -94,6 +94,9 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Configuration
+          EMULATOR_SERIAL="emulator-5554"
+
           echo "Killing any existing adb server"
           adb kill-server || true
 
@@ -108,7 +111,7 @@ jobs:
           echo "Polling for boot completion (timeout ~5 minutes)"
           boot_completed=0
           for i in $(seq 1 60); do
-            boot_completed=$(adb -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
+            boot_completed=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
             echo "Attempt $i: sys.boot_completed='$boot_completed'"
             if [ "$boot_completed" = "1" ]; then
               echo "Emulator boot completed"
@@ -125,9 +128,9 @@ jobs:
           fi
 
           echo "Disabling animations"
-          adb -s emulator-5554 shell settings put global window_animation_scale 0.0 || true
-          adb -s emulator-5554 shell settings put global transition_animation_scale 0.0 || true
-          adb -s emulator-5554 shell settings put global animator_duration_scale 0.0 || true
+          adb -s "$EMULATOR_SERIAL" shell settings put global window_animation_scale 0.0 || true
+          adb -s "$EMULATOR_SERIAL" shell settings put global transition_animation_scale 0.0 || true
+          adb -s "$EMULATOR_SERIAL" shell settings put global animator_duration_scale 0.0 || true
 
       - name: Run integration tests
         shell: bash
