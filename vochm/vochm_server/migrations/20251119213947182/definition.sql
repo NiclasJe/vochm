@@ -7,7 +7,8 @@ CREATE TABLE "animal_findings" (
     "id" bigserial PRIMARY KEY,
     "animalId" bigint NOT NULL,
     "latitude" double precision,
-    "longitude" double precision
+    "longitude" double precision,
+    "location" geometry(Point, 4326)
 );
 
 --
