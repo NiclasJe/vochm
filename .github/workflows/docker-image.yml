@@ -36,6 +36,8 @@ jobs:
           POSTGRES_DB=vochm
           EOF
           echo ".env file created for docker-compose"
+          echo "=== .env contents ==="
+          cat .env
 
       - name: Create Serverpod passwords.yaml
         shell: bash
@@ -52,6 +54,8 @@ jobs:
             database: '1122'
           EOF
           echo "Serverpod passwords.yaml created"
+          echo "=== server/config directory contents ==="
+          ls -la config/
 
       - name: Start database and server with docker-compose
         shell: bash
@@ -162,6 +166,10 @@ jobs:
             --package "system-images;android-33;google_apis;x86_64" \
             --device "pixel_6"
           echo "AVD created successfully"
+          echo "=== Listing AVDs ==="
+          ${ANDROID_SDK_ROOT}/emulator/emulator -list-avds
+          echo "=== AVD directory contents ==="
+          ls -la ~/.android/avd/ || echo "AVD directory not found in ~/.android/avd/"
 
       - name: Start Android emulator and wait for boot
         shell: bash
