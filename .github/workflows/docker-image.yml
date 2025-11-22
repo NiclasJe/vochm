@@ -84,8 +84,7 @@ jobs:
           echo "Waiting for server to start..."
           server_ready=0
           for i in $(seq 1 60); do
-            if docker compose exec -T server wget -q --spider http://localhost:8080/ 2>/dev/null || \
-               curl -f http://localhost:8080/ > /dev/null 2>&1; then
+            if curl -f http://localhost:8080/ > /dev/null 2>&1; then
               echo "Server is responding"
               server_ready=1
               break
@@ -145,9 +144,12 @@ jobs:
         run: |
           set -euo pipefail
           echo "Installing Android SDK system image for API 33"
-          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager \
-            "system-images;android-33;google_apis;x86_64" || true
-          echo "System image installation complete"
+          if yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager \
+            "system-images;android-33;google_apis;x86_64"; then
+            echo "System image installation complete"
+          else
+            echo "Warning: sdkmanager returned non-zero exit code, but continuing..."
+          fi
 
       - name: Create AVD
         shell: bash
