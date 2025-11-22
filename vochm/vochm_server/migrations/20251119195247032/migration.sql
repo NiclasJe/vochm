@@ -10,7 +10,7 @@ DROP TABLE "recipes" CASCADE;
 --
 CREATE TABLE "animal_findings" (
     "id" bigserial PRIMARY KEY,
-    "animalid" bigint NOT NULL,
+    "animalId" bigint NOT NULL,
     "latitude" double precision NOT NULL,
     "longitude" double precision NOT NULL,
     "location" geometry(Point, 4326)
