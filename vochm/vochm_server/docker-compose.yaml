@@ -35,8 +35,8 @@ services:
       DB_USER: postgres
       DB_PASSWORD: 1122
     volumes:
-      # Mount config directory so passwords.yaml is available
-      - ./config:/app/config
+      # Mount config directory so passwords.yaml is available in the container at /config
+      - ./config:/config
     depends_on:
       postgres:
         condition: service_healthy

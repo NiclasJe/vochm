@@ -54,7 +54,7 @@ jobs:
             database: '1122'
           EOF
           echo "Serverpod passwords.yaml created"
-          echo "=== server/config directory contents ==="
+          echo "=== config directory contents ==="
           ls -la config/
 
       - name: Start database and server with docker-compose
