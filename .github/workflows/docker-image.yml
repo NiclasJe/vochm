@@ -113,14 +113,14 @@ jobs:
           for i in $(seq 1 60); do
             boot_completed=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
             echo "Attempt $i: sys.boot_completed='$boot_completed'"
-            if [ "$boot_completed" = "1" ]; then
+            if [[ "$boot_completed" == "1" ]]; then
               echo "Emulator boot completed"
               break
             fi
             sleep 5
           done
 
-          if [ "$boot_completed" != "1" ]; then
+          if [[ "$boot_completed" != "1" ]]; then
             echo "Emulator did not boot in time"
             adb devices
             ps aux | grep -E "emulator|qemu" || true
