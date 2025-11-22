@@ -47,16 +47,18 @@ jobs:
       - name: Activate Serverpod CLI
         working-directory: ./vochm/vochm_server
         run: |
-          # Aktivera korrekt CLI-paket (serverpod_cli är det korrekta namnet för CLI)
+          # Activate the Serverpod CLI package
           dart pub global activate serverpod_cli
-          # Exponera globala binaries i PATH för följande steg
-          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
+          # Expose global binaries in PATH for subsequent steps
+          echo "$HOME/.pub-cache/bin" > $GITHUB_PATH
+          # Verify the CLI is available
+          serverpod --version || (echo "serverpod CLI not found on PATH" && exit 1)
 
       - name: Wait for Postgres
         run: |
-          for i in {1..30}; do
+          for i in {1..60}; do
             pg_isready -h localhost -p 5432 -U postgres && break
-            sleep 1
+            sleep 2
           done
 
       - name: Start Serverpod server
@@ -69,16 +71,25 @@ jobs:
           DATABASE_PASSWORD: postgres
         run: |
           echo "Starting serverpod..."
-          nohup dart bin/main.dart --apply-migrations --address 0.0.0.0 > server.log 2>&1 &
-          sleep 20
+          # Ensure env variables are exported for the background process
+          export DATABASE_HOST="${DATABASE_HOST}"
+          export DATABASE_PORT="${DATABASE_PORT}"
+          export DATABASE_NAME="${DATABASE_NAME}"
+          export DATABASE_USER="${DATABASE_USER}"
+          export DATABASE_PASSWORD="${DATABASE_PASSWORD}"
+
+          # Start server via serverpod CLI so flags like --apply-migrations and --address are recognized
+          nohup serverpod run --apply-migrations --address 0.0.0.0 > server.log 2>&1 &
+          # Give server time to boot and apply migrations
+          sleep 30
           tail -n +1 server.log
 
-      # Förbered Flutter-appen
+      # Prepare Flutter app
       - name: Install Flutter dependencies
         working-directory: ./vochm/vochm_flutter
         run: flutter pub get
 
-      # Kör integrationstester på Android
+      # Run integration tests on Android
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
 
@@ -86,12 +97,10 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 33
-          arch: x86
+          arch: x86_64
           profile: pixel_6
           force-avd-creation: true
-          # Removed "-accel off" to allow host acceleration (faster, avoids "device offline")
           emulator-options: -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim -wipe-data -no-snapshot
-          # Increase timeout to allow slow CI boots
           emulator-boot-timeout: 1800
           script: ./ci/run_emulator_tests.sh
   test:
