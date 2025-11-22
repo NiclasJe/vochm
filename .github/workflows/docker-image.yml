@@ -50,7 +50,7 @@ jobs:
           # Activate the Serverpod CLI package
           dart pub global activate serverpod_cli
           # Expose global binaries in PATH for subsequent steps
-          echo "$HOME/.pub-cache/bin" > $GITHUB_PATH
+          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
           # Verify the CLI is available
           serverpod --version || (echo "serverpod CLI not found on PATH" && exit 1)
 
