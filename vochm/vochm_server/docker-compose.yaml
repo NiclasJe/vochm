@@ -2,9 +2,9 @@ services:
   postgres:
     image: postgis/postgis:17-3.4
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1122
-      POSTGRES_DB: vochm
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-1122}
+      POSTGRES_DB: ${POSTGRES_DB:-vochm}
     ports:
       - "5432:5432"
     volumes:
@@ -22,11 +22,21 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # Legacy DATABASE_* environment variables for compatibility
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: vochm
       DATABASE_USER: postgres
       DATABASE_PASSWORD: 1122
+      # Standard DB_* environment variables
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: vochm
+      DB_USER: postgres
+      DB_PASSWORD: 1122
+    volumes:
+      # Mount config directory so passwords.yaml is available in the container at /config
+      - ./config:/config
     depends_on:
       postgres:
         condition: service_healthy
