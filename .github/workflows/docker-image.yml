@@ -126,7 +126,7 @@ jobs:
             # Test endpoint connectivity
             curl -v http://localhost:8080/ || echo "Server check failed but continuing..."
           else
-            echo "WARNING: Server not responding after 60 seconds, checking logs..."
+            echo "WARNING: Server not responding after timeout, checking logs..."
             cd vochm/vochm_server && docker compose logs server
           fi
 
