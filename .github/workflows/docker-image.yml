@@ -79,110 +79,128 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
 
-      - name: Create AVD and run tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 33
-          arch: x86_64
-          profile: pixel_6
-          force-avd-creation: true
-          emulator-options: -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim -wipe-data -no-snapshot
-          emulator-boot-timeout: 1800
-          script: |
-            set -x
+      - name: Create AVD
+        shell: bash
+        run: |
+          echo "Creating AVD with API 33"
+          echo "no" | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/avdmanager create avd \
+            --force \
+            --name android-emulator \
+            --package "system-images;android-33;google_apis;x86_64" \
+            --device "pixel_6"
 
-            # Configuration
-            EMULATOR_SERIAL="emulator-5554"
-            APP_PACKAGE="com.example.vochm_flutter"
-            DIAGNOSTICS_DIR="$(pwd)"
+      - name: Start Android emulator and wait for boot
+        shell: bash
+        run: |
+          set -euo pipefail
 
-            # Wait for emulator to fully boot
-            echo "Waiting for device..."
-            adb wait-for-device
+          echo "Killing any existing adb server"
+          adb kill-server || true
 
-            boot_completed=""
-            for i in $(seq 1 60); do
-              boot_completed=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || echo "")
-              echo "sys.boot_completed=$boot_completed (attempt $i)"
-              if [[ "$boot_completed" == "1" ]]; then
-                echo "Emulator booted"
-                break
-              fi
-              sleep 5
-            done
+          echo "Start emulator (no-window, no-audio, no-snapshot)"
+          ${ANDROID_SDK_ROOT}/emulator/emulator -avd android-emulator -no-window -no-audio -no-snapshot -no-boot-anim -wipe-data -gpu swiftshader_indirect &
+          EMU_PID=$!
+          echo "Emulator pid: $EMU_PID"
 
-            if [[ "$boot_completed" != "1" ]]; then
-              echo "Emulator did not finish booting after 5 minutes. Dumping diagnostics..." >&2
-              adb -s "$EMULATOR_SERIAL" logcat -d > "$DIAGNOSTICS_DIR/ci-emulator-logcat.txt" || true
-              adb -s "$EMULATOR_SERIAL" shell dumpsys activity > "$DIAGNOSTICS_DIR/ci-dumpsys-activity.txt" || true
-              adb -s "$EMULATOR_SERIAL" shell ps -A > "$DIAGNOSTICS_DIR/ci-ps.txt" || true
-              adb forward --list > "$DIAGNOSTICS_DIR/ci-adb-forward-list.txt" || true
-              echo "Failing the job because emulator did not boot." >&2
-              exit 1
+          echo "Waiting for adb device to appear"
+          adb wait-for-device
+
+          echo "Polling for boot completion (timeout ~5 minutes)"
+          boot_completed=0
+          for i in $(seq 1 60); do
+            boot_completed=$(adb -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
+            echo "Attempt $i: sys.boot_completed='$boot_completed'"
+            if [ "$boot_completed" = "1" ]; then
+              echo "Emulator boot completed"
+              break
             fi
-
-            # Prepare device for tests (adb cleanup + forward remove)
-            echo "Cleaning adb forwards and ensuring device is present"
-            adb -s "$EMULATOR_SERIAL" forward --remove-all || true
-            adb -s "$EMULATOR_SERIAL" wait-for-device
-
-            # Unlock and settle
-            adb -s "$EMULATOR_SERIAL" shell input keyevent 82 || true
             sleep 5
+          done
 
-            # Change to flutter app folder and ensure dependencies
-            cd vochm/vochm_flutter
-            flutter pub get
+          if [ "$boot_completed" != "1" ]; then
+            echo "Emulator did not boot in time"
+            adb devices
+            ps aux | grep -E "emulator|qemu" || true
+            exit 1
+          fi
 
-            # Run integration tests with retry
-            FAILED=0
-            TEST_DIR="integration_test"
-            if [ ! -d "$TEST_DIR" ]; then
-              echo "No integration_test directory found"
-              exit 1
-            fi
+          echo "Disabling animations"
+          adb -s emulator-5554 shell settings put global window_animation_scale 0.0 || true
+          adb -s emulator-5554 shell settings put global transition_animation_scale 0.0 || true
+          adb -s emulator-5554 shell settings put global animator_duration_scale 0.0 || true
 
-            for TEST_FILE in $TEST_DIR/*.dart; do
-              echo "=== Testing $TEST_FILE ==="
-              ATTEMPTS=3
-              TEST_PASSED=0
-              for attempt in $(seq 1 $ATTEMPTS); do
-                echo "Running test file: $TEST_FILE (attempt $attempt/$ATTEMPTS)"
-                adb -s "$EMULATOR_SERIAL" forward --remove-all || true
-                # Run flutter test with a timeout (180s) to avoid infinite hangs
-                # Android emulator reaches host at 10.0.2.2
-                if timeout 180 flutter test "$TEST_FILE" --verbose --dart-define=SERVER_URL=http://10.0.2.2:8080; then
-                  echo "Test $TEST_FILE passed"
-                  TEST_PASSED=1
-                  break
+      - name: Run integration tests
+        shell: bash
+        run: |
+          set -x
+
+          # Configuration
+          EMULATOR_SERIAL="emulator-5554"
+          APP_PACKAGE="com.example.vochm_flutter"
+          DIAGNOSTICS_DIR="$(pwd)"
+
+          # Prepare device for tests (adb cleanup + forward remove)
+          echo "Cleaning adb forwards and ensuring device is present"
+          adb -s "$EMULATOR_SERIAL" forward --remove-all || true
+          adb -s "$EMULATOR_SERIAL" wait-for-device
+
+          # Unlock and settle
+          adb -s "$EMULATOR_SERIAL" shell input keyevent 82 || true
+          sleep 5
+
+          # Change to flutter app folder and ensure dependencies
+          cd vochm/vochm_flutter
+          flutter pub get
+
+          # Run integration tests with retry
+          FAILED=0
+          TEST_DIR="integration_test"
+          if [ ! -d "$TEST_DIR" ]; then
+            echo "No integration_test directory found"
+            exit 1
+          fi
+
+          for TEST_FILE in $TEST_DIR/*.dart; do
+            echo "=== Testing $TEST_FILE ==="
+            ATTEMPTS=3
+            TEST_PASSED=0
+            for attempt in $(seq 1 $ATTEMPTS); do
+              echo "Running test file: $TEST_FILE (attempt $attempt/$ATTEMPTS)"
+              adb -s "$EMULATOR_SERIAL" forward --remove-all || true
+              # Run flutter test with a timeout (180s) to avoid infinite hangs
+              # Android emulator reaches host at 10.0.2.2
+              if timeout 180 flutter test "$TEST_FILE" --verbose --dart-define=SERVER_URL=http://10.0.2.2:8080; then
+                echo "Test $TEST_FILE passed"
+                TEST_PASSED=1
+                break
+              else
+                echo "Test $TEST_FILE failed on attempt $attempt"
+                if [ $attempt -lt $ATTEMPTS ]; then
+                  echo "Collecting logs and retrying..."
+                  adb -s "$EMULATOR_SERIAL" logcat -d > "$DIAGNOSTICS_DIR/ci-emulator-logcat-$(basename $TEST_FILE)-$attempt.txt" || true
+                  sleep 5
+                  adb -s "$EMULATOR_SERIAL" shell am force-stop "$APP_PACKAGE" || true
                 else
-                  echo "Test $TEST_FILE failed on attempt $attempt"
-                  if [[ $attempt -lt $ATTEMPTS ]]; then
-                    echo "Collecting logs and retrying..."
-                    adb -s "$EMULATOR_SERIAL" logcat -d > "$DIAGNOSTICS_DIR/ci-emulator-logcat-$(basename $TEST_FILE)-$attempt.txt" || true
-                    sleep 5
-                    adb -s "$EMULATOR_SERIAL" shell am force-stop "$APP_PACKAGE" || true
-                  else
-                    echo "All attempts failed for $TEST_FILE. Collecting final diagnostics..."
-                    adb -s "$EMULATOR_SERIAL" logcat -d > "$DIAGNOSTICS_DIR/ci-emulator-logcat-$(basename $TEST_FILE)-final.txt" || true
-                    adb -s "$EMULATOR_SERIAL" shell dumpsys activity > "$DIAGNOSTICS_DIR/ci-dumpsys-activity-$(basename $TEST_FILE)-final.txt" || true
-                    adb -s "$EMULATOR_SERIAL" shell ps -A > "$DIAGNOSTICS_DIR/ci-ps-$(basename $TEST_FILE)-final.txt" || true
-                    adb forward --list > "$DIAGNOSTICS_DIR/ci-adb-forward-list-$(basename $TEST_FILE)-final.txt" || true
-                  fi
+                  echo "All attempts failed for $TEST_FILE. Collecting final diagnostics..."
+                  adb -s "$EMULATOR_SERIAL" logcat -d > "$DIAGNOSTICS_DIR/ci-emulator-logcat-$(basename $TEST_FILE)-final.txt" || true
+                  adb -s "$EMULATOR_SERIAL" shell dumpsys activity > "$DIAGNOSTICS_DIR/ci-dumpsys-activity-$(basename $TEST_FILE)-final.txt" || true
+                  adb -s "$EMULATOR_SERIAL" shell ps -A > "$DIAGNOSTICS_DIR/ci-ps-$(basename $TEST_FILE)-final.txt" || true
+                  adb forward --list > "$DIAGNOSTICS_DIR/ci-adb-forward-list-$(basename $TEST_FILE)-final.txt" || true
                 fi
-              done
-              
-              if [[ $TEST_PASSED -eq 0 ]]; then
-                FAILED=1
               fi
             done
-
-            if [[ $FAILED -ne 0 ]]; then
-              echo "One or more integration test files failed."
-              exit 1
+            
+            if [ $TEST_PASSED -eq 0 ]; then
+              FAILED=1
             fi
+          done
 
-            echo "All integration test files passed"
+          if [ $FAILED -ne 0 ]; then
+            echo "One or more integration test files failed."
+            exit 1
+          fi
+
+          echo "All integration test files passed"
 
       - name: Upload integration test artifacts
         if: always()
