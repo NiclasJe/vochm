@@ -176,49 +176,77 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Configuration
-          EMULATOR_SERIAL="emulator-5554"
+          EMULATOR_NAME="android-emulator"
+          ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}"
+          export ANDROID_SDK_ROOT
+          export ANDROID_AVD_HOME="${ANDROID_AVD_HOME:-$HOME/.android/avd}"
+          mkdir -p "$ANDROID_AVD_HOME"
 
-          echo "Killing any existing adb server"
-          adb kill-server || true
-          sleep 2
-          
-          echo "Starting fresh adb server"
-          adb start-server || true
-          sleep 2
+          SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="${ANDROID_SDK_ROOT}/tools/bin/sdkmanager"
+          fi
+          AVDMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/avdmanager"
+          if [ ! -x "$AVDMANAGER" ]; then
+            AVDMANAGER="${ANDROID_SDK_ROOT}/tools/bin/avdmanager"
+          fi
+          EMULATOR_BIN="${ANDROID_SDK_ROOT}/emulator/emulator"
 
-          echo "Start emulator (no-window, no-audio, no-snapshot)"
-          ${ANDROID_SDK_ROOT}/emulator/emulator -avd android-emulator -no-window -no-audio -no-snapshot -no-boot-anim -wipe-data -gpu swiftshader_indirect &
+          echo "Using ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "sdkmanager: $SDKMANAGER"
+          echo "avdmanager: $AVDMANAGER"
+          echo "emulator: $EMULATOR_BIN"
+
+          echo "Installing required SDK components (platform-tools, emulator, system image)..."
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "emulator" "platforms;android-33" "system-images;android-33;google_apis;x86_64" || true
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --licenses || true
+
+          echo "Existing AVDs:"
+          "$EMULATOR_BIN" -list-avds || true
+
+          if ! "$EMULATOR_BIN" -list-avds | grep -qx "$EMULATOR_NAME"; then
+            echo "Creating AVD $EMULATOR_NAME..."
+            printf '\n' | "$AVDMANAGER" create avd --sdk_root="$ANDROID_SDK_ROOT" --force --name "$EMULATOR_NAME" --package "system-images;android-33;google_apis;x86_64" --device "pixel_6" || {
+              echo "Failed to create AVD";
+              "$EMULATOR_BIN" -list-avds || true;
+              ls -la "$ANDROID_AVD_HOME" || true;
+              exit 1;
+            }
+          else
+            echo "AVD $EMULATOR_NAME already exists"
+          fi
+
+          echo "Starting emulator (headless)..."
+          "$EMULATOR_BIN" -avd "$EMULATOR_NAME" -no-window -no-audio -no-snapshot -no-boot-anim -wipe-data -gpu swiftshader_indirect &
           EMU_PID=$!
-          echo "Emulator pid: $EMU_PID"
+          echo "Emulator PID: $EMU_PID"
 
-          echo "Waiting for adb device to appear"
-          adb wait-for-device
-          sleep 2
+          echo "Waiting for adb device"
+          adb wait-for-device || true
 
-          echo "Polling for boot completion (timeout ~5 minutes)"
-          boot_completed=0
+          EMULATOR_SERIAL="emulator-5554"
+          echo "Polling for sys.boot_completed (timeout 5 min)"
           for i in $(seq 1 60); do
             boot_completed=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)
             echo "Attempt $i: sys.boot_completed='$boot_completed'"
-            if [[ "$boot_completed" == "1" ]]; then
-              echo "Emulator boot completed"
-              break
-            fi
+            if [ "$boot_completed" = "1" ]; then
+              echo "Boot completed"; break; fi
             sleep 5
           done
 
-          if [[ "$boot_completed" != "1" ]]; then
-            echo "Emulator did not boot in time"
-            adb devices
+          if [ "$boot_completed" != "1" ]; then
+            echo "Emulator did not finish booting in time";
+            adb devices || true
             ps aux | grep -E "emulator|qemu" || true
             exit 1
           fi
 
-          echo "Disabling animations"
-          adb -s "$EMULATOR_SERIAL" shell settings put global window_animation_scale 0.0 || true
-          adb -s "$EMULATOR_SERIAL" shell settings put global transition_animation_scale 0.0 || true
-          adb -s "$EMULATOR_SERIAL" shell settings put global animator_duration_scale 0.0 || true
+          echo "Disabling animations for faster tests"
+          adb -s "$EMULATOR_SERIAL" shell settings put global window_animation_scale 0 || true
+          adb -s "$EMULATOR_SERIAL" shell settings put global transition_animation_scale 0 || true
+          adb -s "$EMULATOR_SERIAL" shell settings put global animator_duration_scale 0 || true
+
+          echo "Emulator ready"
 
       - name: Run integration tests
         shell: bash
