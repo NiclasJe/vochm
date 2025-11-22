@@ -9,6 +9,21 @@
       <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_server/.dart_tool" />
       <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_server/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_server/build" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_client/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_client/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_client/build" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_flutter/linux/flutter/ephemeral/.plugin_symlinks/connectivity_plus/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_flutter/linux/flutter/ephemeral/.plugin_symlinks/connectivity_plus/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_flutter/linux/flutter/ephemeral/.plugin_symlinks/connectivity_plus/build" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_flutter/linux/flutter/ephemeral/.plugin_symlinks/connectivity_plus/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_flutter/linux/flutter/ephemeral/.plugin_symlinks/connectivity_plus/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_flutter/linux/flutter/ephemeral/.plugin_symlinks/connectivity_plus/example/build" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_flutter/windows/flutter/ephemeral/.plugin_symlinks/connectivity_plus/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_flutter/windows/flutter/ephemeral/.plugin_symlinks/connectivity_plus/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_flutter/windows/flutter/ephemeral/.plugin_symlinks/connectivity_plus/build" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_flutter/windows/flutter/ephemeral/.plugin_symlinks/connectivity_plus/example/.dart_tool" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_flutter/windows/flutter/ephemeral/.plugin_symlinks/connectivity_plus/example/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/vochm/vochm_flutter/windows/flutter/ephemeral/.plugin_symlinks/connectivity_plus/example/build" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

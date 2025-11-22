@@ -103,7 +103,6 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim -wipe-data -no-snapshot
           emulator-boot-timeout: 1800
           script: |
-            set -euo pipefail
             set -x
 
             # Configuration
