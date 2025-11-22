@@ -198,15 +198,15 @@ jobs:
           echo "emulator: $EMULATOR_BIN"
 
           echo "Installing required SDK components (platform-tools, emulator, system image)..."
-          yes | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "emulator" "platforms;android-33" "system-images;android-33;google_apis;x86_64" || true
-          yes | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --licenses || true
+          yes | "$SDKMANAGER" "platform-tools" "emulator" "platforms;android-33" "system-images;android-33;google_apis;x86_64" || true
+          yes | "$SDKMANAGER" --licenses || true
 
           echo "Existing AVDs:"
           "$EMULATOR_BIN" -list-avds || true
 
           if ! "$EMULATOR_BIN" -list-avds | grep -qx "$EMULATOR_NAME"; then
             echo "Creating AVD $EMULATOR_NAME..."
-            printf '\n' | "$AVDMANAGER" create avd --sdk_root="$ANDROID_SDK_ROOT" --force --name "$EMULATOR_NAME" --package "system-images;android-33;google_apis;x86_64" --device "pixel_6" || {
+            printf '\n' | "$AVDMANAGER" create avd --force --name "$EMULATOR_NAME" --package "system-images;android-33;google_apis;x86_64" --device "pixel_6" || {
               echo "Failed to create AVD";
               "$EMULATOR_BIN" -list-avds || true;
               ls -la "$ANDROID_AVD_HOME" || true;
