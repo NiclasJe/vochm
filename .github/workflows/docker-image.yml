@@ -178,7 +178,7 @@ jobs:
                 break
               else
                 echo "Test $TEST_FILE failed on attempt $attempt"
-                if [ $attempt -lt $ATTEMPTS ]; then
+                if [[ $attempt -lt $ATTEMPTS ]]; then
                   echo "Collecting logs and retrying..."
                   adb -s "$EMULATOR_SERIAL" logcat -d > "$DIAGNOSTICS_DIR/ci-emulator-logcat-$(basename $TEST_FILE)-$attempt.txt" || true
                   sleep 5
@@ -193,12 +193,12 @@ jobs:
               fi
             done
             
-            if [ $TEST_PASSED -eq 0 ]; then
+            if [[ $TEST_PASSED -eq 0 ]]; then
               FAILED=1
             fi
           done
 
-          if [ $FAILED -ne 0 ]; then
+          if [[ $FAILED -ne 0 ]]; then
             echo "One or more integration test files failed."
             exit 1
           fi
