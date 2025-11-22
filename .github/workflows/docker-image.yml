@@ -89,8 +89,10 @@ jobs:
           arch: x86_64
           profile: pixel_6
           force-avd-creation: true
-          emulator-options: -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim -wipe-data -no-snapshot -accel off
-          emulator-boot-timeout: 1200
+          # Removed "-accel off" to allow host acceleration (faster, avoids "device offline")
+          emulator-options: -no-window -gpu swiftshader_indirect -no-audio -no-boot-anim -wipe-data -no-snapshot
+          # Increase timeout to allow slow CI boots
+          emulator-boot-timeout: 1800
           script: ./ci/run_emulator_tests.sh
   test:
     name: Run Flutter Unit Tests
