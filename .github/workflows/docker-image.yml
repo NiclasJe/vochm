@@ -25,26 +25,78 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Start database and server with docker-compose
+      - name: Create .env for docker-compose
+        shell: bash
         working-directory: ./vochm/vochm_server
         run: |
+          set -euo pipefail
+          cat > .env <<EOF
+          POSTGRES_USER=postgres
+          POSTGRES_PASSWORD=1122
+          POSTGRES_DB=vochm
+          EOF
+          echo ".env file created for docker-compose"
+
+      - name: Create Serverpod passwords.yaml
+        shell: bash
+        working-directory: ./vochm/vochm_server
+        run: |
+          set -euo pipefail
+          mkdir -p config
+          cat > config/passwords.yaml <<EOF
+          production:
+            database: '1122'
+          development:
+            database: '1122'
+          staging:
+            database: '1122'
+          EOF
+          echo "Serverpod passwords.yaml created"
+
+      - name: Start database and server with docker-compose
+        shell: bash
+        working-directory: ./vochm/vochm_server
+        run: |
+          set -euo pipefail
           echo "Starting services with docker-compose..."
           docker compose up -d --build
           
           echo "Waiting for services to be healthy..."
-          # Wait for postgres to be healthy
-          for i in {1..60}; do
+          # Wait for postgres to be healthy with proper timeout
+          postgres_ready=0
+          for i in $(seq 1 60); do
             if docker compose exec -T postgres pg_isready -U postgres > /dev/null 2>&1; then
               echo "Postgres is ready"
+              postgres_ready=1
               break
             fi
             echo "Waiting for Postgres... ($i/60)"
             sleep 2
           done
           
-          # Wait for server to be ready (check logs for successful start)
+          if [[ "$postgres_ready" != "1" ]]; then
+            echo "ERROR: Postgres did not become ready in time"
+            docker compose logs postgres
+            exit 1
+          fi
+          
+          # Wait for server to be ready (check if it's responding)
           echo "Waiting for server to start..."
-          sleep 10
+          server_ready=0
+          for i in $(seq 1 60); do
+            if docker compose exec -T server wget -q --spider http://localhost:8080/ 2>/dev/null || \
+               curl -f http://localhost:8080/ > /dev/null 2>&1; then
+              echo "Server is responding"
+              server_ready=1
+              break
+            fi
+            echo "Waiting for server to respond... ($i/60)"
+            sleep 2
+          done
+          
+          if [[ "$server_ready" != "1" ]]; then
+            echo "WARNING: Server may not be fully ready, but continuing..."
+          fi
           
           echo "=== Docker Compose Services Status ==="
           docker compose ps
@@ -56,19 +108,28 @@ jobs:
           docker compose logs postgres
 
       - name: Verify server is responding
+        shell: bash
         run: |
+          set -euo pipefail
           echo "Testing server connectivity..."
-          for i in {1..30}; do
+          server_responding=0
+          for i in $(seq 1 30); do
             if curl -f http://localhost:8080/ > /dev/null 2>&1; then
               echo "Server is responding on port 8080"
+              server_responding=1
               break
             fi
             echo "Waiting for server to respond... ($i/30)"
             sleep 2
           done
           
-          # Test endpoint connectivity
-          curl -v http://localhost:8080/ || echo "Server not responding yet, but continuing..."
+          if [[ "$server_responding" == "1" ]]; then
+            # Test endpoint connectivity
+            curl -v http://localhost:8080/ || echo "Server check failed but continuing..."
+          else
+            echo "WARNING: Server not responding after 60 seconds, checking logs..."
+            cd vochm/vochm_server && docker compose logs server
+          fi
 
       # Prepare Flutter app
       - name: Install Flutter dependencies
@@ -79,15 +140,26 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
 
+      - name: Install Android system image
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Installing Android SDK system image for API 33"
+          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager \
+            "system-images;android-33;google_apis;x86_64" || true
+          echo "System image installation complete"
+
       - name: Create AVD
         shell: bash
         run: |
+          set -euo pipefail
           echo "Creating AVD with API 33"
           echo "no" | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/avdmanager create avd \
             --force \
             --name android-emulator \
             --package "system-images;android-33;google_apis;x86_64" \
             --device "pixel_6"
+          echo "AVD created successfully"
 
       - name: Start Android emulator and wait for boot
         shell: bash
@@ -99,6 +171,11 @@ jobs:
 
           echo "Killing any existing adb server"
           adb kill-server || true
+          sleep 2
+          
+          echo "Starting fresh adb server"
+          adb start-server || true
+          sleep 2
 
           echo "Start emulator (no-window, no-audio, no-snapshot)"
           ${ANDROID_SDK_ROOT}/emulator/emulator -avd android-emulator -no-window -no-audio -no-snapshot -no-boot-anim -wipe-data -gpu swiftshader_indirect &
@@ -107,6 +184,7 @@ jobs:
 
           echo "Waiting for adb device to appear"
           adb wait-for-device
+          sleep 2
 
           echo "Polling for boot completion (timeout ~5 minutes)"
           boot_completed=0
@@ -218,6 +296,7 @@ jobs:
 
       - name: Collect docker-compose logs
         if: always()
+        shell: bash
         working-directory: ./vochm/vochm_server
         run: |
           echo "Collecting final logs..."
@@ -237,6 +316,7 @@ jobs:
 
       - name: Cleanup docker-compose services
         if: always()
+        shell: bash
         working-directory: ./vochm/vochm_server
         run: |
           echo "Stopping docker-compose services..."
