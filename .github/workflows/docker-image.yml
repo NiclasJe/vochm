@@ -206,15 +206,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: integration-test-diagnostics
-          path: |
-            ci-*.txt
-            ci-emulator-logcat-live.txt
-            ci-emulator-logcat-snapshot.txt
-            ci-dumpsys-activity.txt
-            ci-ps.txt
-            ci-adb-forward-list.txt
-            vochm/vochm_flutter/integration_test/*.log
+          name: ci-integration-test-artifacts
+          path: test-artifacts/**
           if-no-files-found: ignore
           retention-days: 7
 
