@@ -209,6 +209,10 @@ jobs:
           name: integration-test-diagnostics
           path: |
             ci-*.txt
+            ci-emulator-logcat.txt
+            ci-dumpsys-activity.txt
+            ci-ps.txt
+            ci-adb-forward-list.txt
             vochm/vochm_flutter/integration_test/*.log
           if-no-files-found: ignore
           retention-days: 7
