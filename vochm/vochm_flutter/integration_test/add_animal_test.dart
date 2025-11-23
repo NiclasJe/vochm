@@ -7,6 +7,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Add animal and verify it appears in list', (tester) async {
+    print("Starting test add_animal");
     app.main();
     await tester.pumpAndSettle();
 

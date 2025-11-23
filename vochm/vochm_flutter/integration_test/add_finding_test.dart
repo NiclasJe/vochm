@@ -8,6 +8,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Add finding for animal via map selection', (tester) async {
+    print("Starting test add_finding");
     app.main();
     await tester.pumpAndSettle();
 
