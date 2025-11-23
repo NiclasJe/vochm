@@ -29,7 +29,7 @@ echo "Emulator serial: $EMULATOR_SERIAL"
 
 # Wait for device to be 'device' and for Android boot to complete
 echo "Waiting for emulator to be ONLINE and for sys.boot_completed..."
-adb wait-for-device
+adb -s "$EMULATOR_SERIAL" wait-for-device
 # Wait up to 3 minutes for sys.boot_completed
 for i in $(seq 1 36); do
   boot_completed=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
