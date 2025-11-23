@@ -42,7 +42,7 @@ for i in $(seq 1 36); do
 done
 # Wait until adb device shows as 'device'
 for i in $(seq 1 12); do
-  state=$(adb devices | awk 'NR>1 {print $2}' | tr -d '\r' | head -n1 || true)
+  state=$(adb -s "$EMULATOR_SERIAL" get-state 2>/dev/null | tr -d '\r')
   if [ "$state" = "device" ]; then
     echo "adb device is ready"
     break
@@ -50,6 +50,14 @@ for i in $(seq 1 12); do
   echo "adb device not ready yet ($i/12) - sleeping 5s"
   sleep 5
 done
+
+# Verify device state
+DEVICE_STATE=$(adb -s "$EMULATOR_SERIAL" get-state 2>/dev/null | tr -d '\r')
+if [ "$DEVICE_STATE" != "device" ]; then
+  echo "ERROR: Emulator device state is not 'device'. Current state: '$DEVICE_STATE'"
+  adb devices
+  exit 1
+fi
 
 # Verify boot completed
 BOOT_COMPLETED=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
