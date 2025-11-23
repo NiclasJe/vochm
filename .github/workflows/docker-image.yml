@@ -209,7 +209,8 @@ jobs:
           name: integration-test-diagnostics
           path: |
             ci-*.txt
-            ci-emulator-logcat.txt
+            ci-emulator-logcat-live.txt
+            ci-emulator-logcat-snapshot.txt
             ci-dumpsys-activity.txt
             ci-ps.txt
             ci-adb-forward-list.txt

@@ -2,6 +2,10 @@
 set -euo pipefail
 set -x
 
+# Set artifacts directory to workspace root (before any cd commands)
+ARTIFACTS_DIR="$(pwd)"
+echo "Artifacts will be saved to: $ARTIFACTS_DIR"
+
 # reset adb to avoid 'device offline' leftover state
 adb kill-server || true
 adb start-server || true
@@ -50,7 +54,7 @@ adb -s "$EMULATOR_SERIAL" shell input keyevent 82 || true
 sleep 5
 
 # Start logcat capture in background
-LOGFILE="$(pwd)/ci-emulator-logcat.txt"
+LOGFILE="${ARTIFACTS_DIR}/ci-emulator-logcat-live.txt"
 adb -s "$EMULATOR_SERIAL" logcat -v time > "$LOGFILE" 2>&1 & LOGCAT_PID=$!
 echo "Started logcat (pid=$LOGCAT_PID) -> $LOGFILE"
 
@@ -80,11 +84,11 @@ run_test_file() {
 
     echo "Test $file failed on attempt $attempt — collecting diagnostics"
     # collect adb forward mapping
-    adb forward --list > "../ci-adb-forward-list.txt" || true
+    adb forward --list > "${ARTIFACTS_DIR}/ci-adb-forward-list.txt" || true
     # collect dumpsys, ps and logcat snapshot
-    adb -s "$EMULATOR_SERIAL" shell dumpsys activity > "../ci-dumpsys-activity.txt" || true
-    adb -s "$EMULATOR_SERIAL" shell ps -A > "../ci-ps.txt" || true
-    adb -s "$EMULATOR_SERIAL" logcat -d > "../ci-emulator-logcat.txt" || true
+    adb -s "$EMULATOR_SERIAL" shell dumpsys activity > "${ARTIFACTS_DIR}/ci-dumpsys-activity.txt" || true
+    adb -s "$EMULATOR_SERIAL" shell ps -A > "${ARTIFACTS_DIR}/ci-ps.txt" || true
+    adb -s "$EMULATOR_SERIAL" logcat -d > "${ARTIFACTS_DIR}/ci-emulator-logcat-snapshot.txt" || true
     # wait a bit before retry
     sleep 5
   done
@@ -112,8 +116,15 @@ done
 # Stop background logcat
 kill $LOGCAT_PID || true
 
+# Collect final diagnostics (always, even on success)
+echo "Collecting final diagnostics..."
+adb forward --list > "${ARTIFACTS_DIR}/ci-adb-forward-list-final.txt" || true
+adb -s "$EMULATOR_SERIAL" shell dumpsys activity > "${ARTIFACTS_DIR}/ci-dumpsys-activity-final.txt" || true
+adb -s "$EMULATOR_SERIAL" shell ps -A > "${ARTIFACTS_DIR}/ci-ps-final.txt" || true
+adb -s "$EMULATOR_SERIAL" logcat -d > "${ARTIFACTS_DIR}/ci-emulator-logcat-final.txt" || true
+
 if [ $FAILED -ne 0 ]; then
-  echo "One or more integration test files failed. See artifacts: ci-emulator-logcat.txt, ci-dumpsys-activity.txt, ci-ps.txt, ci-adb-forward-list.txt"
+  echo "One or more integration test files failed. See artifacts: ci-emulator-logcat-*.txt, ci-dumpsys-activity*.txt, ci-ps*.txt, ci-adb-forward-list*.txt"
   exit 1
 fi
 
