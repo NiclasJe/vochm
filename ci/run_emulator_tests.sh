@@ -29,20 +29,30 @@ echo "Emulator serial: $EMULATOR_SERIAL"
 
 # Wait for device to be 'device' and for Android boot to complete
 echo "Waiting for emulator to be ONLINE and for sys.boot_completed..."
-for i in $(seq 1 900); do    # up to 30 minutes if needed
-  STATE=$(adb -s "$EMULATOR_SERIAL" get-state 2>/dev/null || echo "unknown")
-  echo "State: $STATE"
-  if [ "$STATE" = "device" ]; then
-    BOOT_COMPLETED=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed 2>/dev/null || echo "")
-    if [ "$BOOT_COMPLETED" = "1" ]; then
-      echo "sys.boot_completed=1"
-      break
-    fi
+adb wait-for-device
+# Wait up to 3 minutes for sys.boot_completed
+for i in $(seq 1 36); do
+  boot_completed=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+  if [ "$boot_completed" = "1" ]; then
+    echo "Emulator boot completed"
+    break
   fi
-  sleep 2
+  echo "Emulator not ready yet ($i/36) - sleeping 5s"
+  sleep 5
+done
+# Wait until adb device shows as 'device'
+for i in $(seq 1 12); do
+  state=$(adb devices | awk 'NR>1 {print $2}' | tr -d '\r' | head -n1 || true)
+  if [ "$state" = "device" ]; then
+    echo "adb device is ready"
+    break
+  fi
+  echo "adb device not ready yet ($i/12) - sleeping 5s"
+  sleep 5
 done
 
-BOOT_COMPLETED=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed || echo "")
+# Verify boot completed
+BOOT_COMPLETED=$(adb -s "$EMULATOR_SERIAL" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
 if [ "$BOOT_COMPLETED" != "1" ]; then
   echo "ERROR: Emulator did not finish booting. sys.boot_completed='$BOOT_COMPLETED'"
   adb -s "$EMULATOR_SERIAL" shell getprop | sed -n '1,200p' || true
@@ -53,9 +63,11 @@ fi
 adb -s "$EMULATOR_SERIAL" shell input keyevent 82 || true
 sleep 5
 
-# Extra stabilizing sleep to ensure services (including VM Service) are up
+# Extra stabilization sleep to ensure services (including VM Service) are up
 echo "Adding extra stabilization time for services to be fully ready..."
 sleep 10
+echo "adb devices:" && adb devices || true
+echo "adb forward list:" && adb forward --list || true
 
 # Start logcat capture in background
 LOGFILE="${ARTIFACTS_DIR}/ci-emulator-logcat-live.txt"
@@ -77,12 +89,11 @@ run_test_file() {
     echo "Running test file: $file (attempt $attempt/$tries)"
     # Clean previous app on device
     adb -s "$EMULATOR_SERIAL" shell am force-stop com.example.vochm_flutter || true
-    # Remove any previous forward to avoid collisions
-    adb forward --remove-all || true
+    # Do not remove adb forwards here; let flutter handle forwarding.
 
     # Start test (the flutter tool will build, install and forward ports)
-    # Add timeout of 180s to allow slower CI environments to connect to VM Service
-    if flutter test "$file" --timeout=180s --verbose; then
+    # Add timeout of 300s to allow slower CI environments to connect to VM Service
+    if flutter test "$file" --timeout=300s --verbose; then
       echo "Test $file passed"
       return 0
     fi
