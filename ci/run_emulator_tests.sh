@@ -53,6 +53,10 @@ fi
 adb -s "$EMULATOR_SERIAL" shell input keyevent 82 || true
 sleep 5
 
+# Extra stabilizing sleep to ensure services (including VM Service) are up
+echo "Adding extra stabilization time for services to be fully ready..."
+sleep 10
+
 # Start logcat capture in background
 LOGFILE="${ARTIFACTS_DIR}/ci-emulator-logcat-live.txt"
 adb -s "$EMULATOR_SERIAL" logcat -v time > "$LOGFILE" 2>&1 & LOGCAT_PID=$!
@@ -77,7 +81,8 @@ run_test_file() {
     adb forward --remove-all || true
 
     # Start test (the flutter tool will build, install and forward ports)
-    if flutter test "$file" --verbose; then
+    # Add timeout of 180s to allow slower CI environments to connect to VM Service
+    if flutter test "$file" --timeout=180s --verbose; then
       echo "Test $file passed"
       return 0
     fi
