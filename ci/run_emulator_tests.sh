@@ -101,7 +101,7 @@ run_test_file() {
 
     # Start test (the flutter tool will build, install and forward ports)
     # Add timeout of 300s to allow slower CI environments to connect to VM Service
-    if flutter test "$file" --timeout=300s --verbose; then
+    if flutter test "$file" --timeout=600s --verbose; then
       echo "Test $file passed"
       return 0
     fi
