@@ -19,7 +19,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: '3.24.5'
           channel: 'stable'
 
       - name: Set up Docker Buildx
@@ -194,7 +194,7 @@ jobs:
       - name: Create AVD and run tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 33
+          api-level: 31
           arch: x86_64
           profile: pixel_6
           force-avd-creation: true
