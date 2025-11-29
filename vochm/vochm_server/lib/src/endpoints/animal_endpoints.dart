@@ -30,4 +30,8 @@ class AnimalEndpoint extends Endpoint {
       where: (t) => t.id.equals(animalId),
     );
   }
+
+  Future<String> testCall(Session session) async {
+    return "hejhej";
+  }
 }

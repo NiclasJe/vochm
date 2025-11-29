@@ -82,6 +82,24 @@ class _AnimalMapPageState extends State<AnimalMapPage>
                     ),
                   ),
                 ),
+              Align(
+                alignment: Alignment.bottomLeft,
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: ElevatedButton(
+                      key: const Key('testButton'),
+                      onPressed: _controller.test,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        elevation: 6,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      child: const Text('Test', style: TextStyle(fontSize: 16, color: Colors.white)),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
           floatingActionButton: FloatingActionButton(

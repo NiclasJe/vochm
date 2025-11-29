@@ -87,6 +87,15 @@ class Endpoints extends _i1.EndpointDispatch {
             params['animalId'],
           ),
         ),
+        'testCall': _i1.MethodConnector(
+          name: 'testCall',
+          params: {},
+          call: (
+            _i1.Session session,
+            Map<String, dynamic> params,
+          ) async =>
+              (endpoints['animal'] as _i2.AnimalEndpoint).testCall(session),
+        ),
       },
     );
     connectors['animalFinding'] = _i1.EndpointConnector(

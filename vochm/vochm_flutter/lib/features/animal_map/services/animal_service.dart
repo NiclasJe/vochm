@@ -16,5 +16,9 @@ class AnimalService {
   Future<api.Animal?> getAnimalById(int animalId) async {
     return _client.animal.getAnimalById(animalId);
   }
+
+  Future<String> test() async {
+    return await _client.animal.testCall();
+  }
 }
 

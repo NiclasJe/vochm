@@ -43,6 +43,12 @@ class EndpointAnimal extends _i1.EndpointRef {
         'getAnimalById',
         {'animalId': animalId},
       );
+
+  _i2.Future<String> testCall() => caller.callServerEndpoint<String>(
+        'animal',
+        'testCall',
+        {},
+      );
 }
 
 /// {@category Endpoint}

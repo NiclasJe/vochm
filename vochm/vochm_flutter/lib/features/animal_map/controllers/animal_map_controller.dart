@@ -79,11 +79,17 @@ class AnimalMapController extends Cubit<AnimalMapState> {
   final AnimalFindingService animalFindingService;
 
   List<api.Animal> get animals => state.animals;
+
   List<api.AnimalFinding> get findings => state.findings;
+
   Map<int, double> get nearestDistanceByAnimalId => state.nearestDistanceByAnimalId;
+
   bool get isLoading => state.isLoading;
+
   bool get isSubmitting => state.isSubmitting;
+
   String? get errorMessage => state.errorMessage;
+
   LatLng? get lastTappedLocation => state.lastTappedLocation;
 
   Future<void> init() async {
@@ -155,5 +161,15 @@ class AnimalMapController extends Cubit<AnimalMapState> {
 
   void clearError() {
     emit(state.copyWith(clearErrorMessage: true));
+  }
+
+  Future<void> test() async {
+    try {
+      String test = await animalService.test();
+      print(test);
+      emit(state.copyWith(errorMessage: "Success"));
+    } catch (e) {
+      emit(state.copyWith(errorMessage: "Test failed"));
+    }
   }
 }

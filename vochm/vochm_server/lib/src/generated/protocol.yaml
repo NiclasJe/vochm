@@ -2,6 +2,7 @@ animal:
   - addAnimal:
   - getAllAnimals:
   - getAnimalById:
+  - testCall:
 animalFinding:
   - insertAnimalFinding:
   - getAnimalFindings:
