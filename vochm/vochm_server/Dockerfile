@@ -1,5 +1,5 @@
 # Build stage
-FROM dart:3.5.3 AS build
+FROM dart:stable AS build
 WORKDIR /app
 
 # Fix DNS for Docker/Alpine-like behavior when resolving pub.dev
