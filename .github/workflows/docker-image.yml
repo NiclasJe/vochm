@@ -74,7 +74,5 @@ jobs:
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            cd /path/to/your/docker-compose/folder
-            docker pull ghcr.io/${{ github.repository_owner }}/vochm:latest
-            docker compose down
-            docker compose up -d --build
+            cd backend
+            ./deploy.sh
