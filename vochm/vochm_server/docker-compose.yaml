@@ -9,6 +9,14 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -22,21 +30,27 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Legacy DATABASE_* environment variables for compatibility
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: vochm
       DATABASE_USER: postgres
       DATABASE_PASSWORD: 1122
-      # Standard DB_* environment variables
+
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: vochm
       DB_USER: postgres
       DB_PASSWORD: 1122
     volumes:
-      # Mount config directory so passwords.yaml is available in the container at /config
       - ./config:/config
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 512M
     depends_on:
       postgres:
         condition: service_healthy
