@@ -14,9 +14,6 @@ services:
     volumes:
       # Mount config directory so passwords.yaml is available in the container at /config
       - ./config:/config
-    depends_on:
-      postgres:
-        condition: service_healthy
 
 volumes:
   postgres_data:
