@@ -34,6 +34,7 @@ database:
   port: 5432
   name: vochm
   user: postgres
+  password: '1122'
   #isUnixSocket: true # defaults to false
 
 # This is the setup for Redis. The default for the Google Cloud Engine Terraform
