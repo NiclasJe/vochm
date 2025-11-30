@@ -10,7 +10,7 @@ final getIt = GetIt.instance;
 
 Future<void> setupServiceLocator({String? serverUrl}) async {
   // Serverpod Client
-  final url = 'http://172.24.4.239:5432/';
+  final url = 'http://172.24.4.239:8080/';
   final client = Client(url)..connectivityMonitor = FlutterConnectivityMonitor();
 
   getIt.registerLazySingleton<Client>(() => client);
